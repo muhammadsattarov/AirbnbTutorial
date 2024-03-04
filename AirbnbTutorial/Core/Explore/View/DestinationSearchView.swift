@@ -15,7 +15,7 @@ enum DestinationSearchOptions {
 
 struct DestinationSearchView: View {
     @Binding var show: Bool
-    @State private var destination = ""
+    @ObservedObject var viewModel: ExploreViewModel
     @State private var selectedOption: DestinationSearchOptions = .location
     @State private var startDate = Date()
     @State private var endDate = Date()
@@ -26,6 +26,7 @@ struct DestinationSearchView: View {
             HStack{
                 Button{
                     withAnimation(.snappy){
+                        viewModel.updateListingForLocation()
                         show.toggle()
                     }
                 } label: {
@@ -34,9 +35,10 @@ struct DestinationSearchView: View {
                         .foregroundStyle(.black)
                 }
                 Spacer()
-                if !destination.isEmpty {
+                if !viewModel.searchLocation.isEmpty {
                     Button("Clear"){
-                        destination = ""
+                        viewModel.searchLocation = ""
+                        viewModel.updateListingForLocation()
                     }
                     .foregroundStyle(.black)
                     .font(.subheadline)
@@ -54,8 +56,12 @@ struct DestinationSearchView: View {
                     HStack{
                         Image(systemName: "magnifyingglass")
                             .imageScale(.small)
-                        TextField("Search destinations", text: $destination)
+                        TextField("Search destinations", text: $viewModel.searchLocation)
                             .font(.subheadline)
+                            .onSubmit {
+                                viewModel.updateListingForLocation()
+                                show.toggle()
+                            }
                     }
                     .frame(height: 44)
                     .padding(.horizontal)
@@ -93,49 +99,49 @@ struct DestinationSearchView: View {
                     .fontWeight(.semibold)
                 } else {
                     CollapsedPicerView(title: "When", description: "Add dates")
-                        
+                        .onTapGesture {
+                            withAnimation(.snappy) { selectedOption = .dates }
+                        }
                 }
             }
             .modifier(CollapsibleDestinationViewModifier())
             .frame(height: selectedOption == .dates ? 160 : 64)
-            .onTapGesture {
-                withAnimation(.snappy) { selectedOption = .dates }
-            }
             
             
             
             //num guests view
             VStack(alignment: .leading){
                 if selectedOption == .guests {
-                    Text("Who's coming?")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
-                    Stepper {
-                        Text("\(numGuests) Adults")
-                    } onIncrement: {
-                        numGuests += 1
-                    } onDecrement: {
-                        guard numGuests > 0 else { return }
-                        numGuests -= 1
-                    }
-                    
+                        Text("Who's coming?")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                        
+                        Stepper {
+                            Text("\(numGuests) Adults")
+                        } onIncrement: {
+                            numGuests += 1
+                        } onDecrement: {
+                            guard numGuests > 0 else { return }
+                            numGuests -= 1
+                        }
                 } else {
                     CollapsedPicerView(title: "Who", description: "Add guests")
+                        .onTapGesture {
+                            withAnimation(.snappy) { selectedOption = .guests }
+                        }
                 }
             }
             .modifier(CollapsibleDestinationViewModifier())
             .frame(height: selectedOption == .guests ? 120 : 64)
-
-            .onTapGesture {
-                withAnimation(.snappy) { selectedOption = .guests }
-            }
+            
+            
+            Spacer()
         }
     }
 }
 
 #Preview {
-    DestinationSearchView(show: .constant(false))
+    DestinationSearchView(show: .constant(false), viewModel: ExploreViewModel(service: ExploreService()))
 }
 
 
@@ -165,7 +171,9 @@ struct CollapsedPicerView: View {
             .font(.subheadline)
             .fontWeight(.semibold)
         }
+        
     }
 }
+
 
 

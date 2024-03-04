@@ -7,12 +7,22 @@
 
 import SwiftUI
 
+
+
 struct ListingImageCoruselView: View {
+    let listing: Listing
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        TabView{
+            ForEach(listing.imageURLs, id: \.self){image in
+                Image(image)
+                    .resizable()
+                    .scaledToFill()
+            }
+        }
+            .tabViewStyle(.page)
     }
 }
 
 #Preview {
-    ListingImageCoruselView()
+    ListingImageCoruselView(listing: DeveloperPreview.shared.listings[0])
 }
